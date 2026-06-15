@@ -2,9 +2,9 @@
   "mcpServers": {
     "quizcc-server": {
       "command": "npx",
-      "args": ["tsx", "${CLAUDE_PLUGIN_ROOT}/src/mcp/server.ts"],
+      "args": ["tsx", "./src/mcp/server.ts"],
       "env": {
-        "QUIZCC_STATE_DIR": "${CLAUDE_PROJECT_DIR}/.claude/quizcc"
+        "QUIZCC_STATE_DIR": "./.claude/quizcc"
       }
     }
   }

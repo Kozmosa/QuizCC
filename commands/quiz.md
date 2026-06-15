@@ -204,7 +204,7 @@ When the user passes `--web` (e.g., `/quiz --web machine learning`), do NOT run 
 Start the web server as a background task (if not already running):
 
 ```bash
-cd ${CLAUDE_PLUGIN_ROOT} && npx tsx src/web/server.ts &
+npx tsx src/web/server.ts &
 ```
 
 If port 3456 is already in use, the server may already be running — that's fine, continue.
