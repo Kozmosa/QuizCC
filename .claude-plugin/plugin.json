@@ -6,6 +6,5 @@
     "name": "QuizCC"
   },
   "keywords": ["quiz", "learning", "interactive", "education"],
-  "commands": "./commands",
-  "mcpServers": ".mcp.json"
+  "commands": "./commands"
 }
