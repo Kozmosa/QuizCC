@@ -178,7 +178,7 @@ function renderQuestion(messages, index = currentIndex) {
   const isLastQuestion = index === quizGroup.questions.length - 1;
 
   return `
-    <p class="quizcat__stem">${escapeHtml(question.stem)}</p>
+    <p class="quizcat__stem">${renderRichText(question.stem)}</p>
     <div class="quizcat__options" role="list">
       ${getOptions(question)
         .map((option) => renderOption(question, option, selected, submitted))
@@ -222,7 +222,7 @@ function renderOption(question, option, selected, submitted) {
       ${submitted ? "disabled" : ""}
     >
       <span class="quizcat__option-key">${escapeHtml(option.label)}</span>
-      <span class="quizcat__option-text">${escapeHtml(option.text)}</span>
+      <span class="quizcat__option-text">${renderRichText(option.text)}</span>
     </button>
   `;
 }
@@ -244,10 +244,10 @@ function renderFeedback(question, messages) {
       </div>
       ${
         correctAnswer !== undefined
-          ? `<p>${escapeHtml(messages.correctAnswer)}: <strong>${escapeHtml(correctText)}</strong></p>`
+          ? `<p>${escapeHtml(messages.correctAnswer)}: <strong>${renderRichText(correctText)}</strong></p>`
           : ""
       }
-      ${submittedEntry.explanation ? `<p>${escapeHtml(submittedEntry.explanation)}</p>` : ""}
+      ${submittedEntry.explanation ? `<p>${renderRichText(submittedEntry.explanation)}</p>` : ""}
     </div>
   `;
 }
@@ -320,10 +320,10 @@ function renderMistake(mistake, messages) {
   const stem = mistake.stem || mistake.questionId;
   return `
     <article class="quizcat__mistake">
-      <strong>${escapeHtml(stem)}</strong>
-      <p>${escapeHtml(messages.yourAnswer)}: ${escapeHtml(mistake.userAnswer || messages.noAnswer)}</p>
-      <p>${escapeHtml(messages.correctAnswer)}: ${escapeHtml(mistake.correctAnswer || "")}</p>
-      ${mistake.explanation ? `<p>${escapeHtml(mistake.explanation)}</p>` : ""}
+      <strong>${renderRichText(stem)}</strong>
+      <p>${escapeHtml(messages.yourAnswer)}: ${renderRichText(mistake.userAnswer || messages.noAnswer)}</p>
+      <p>${escapeHtml(messages.correctAnswer)}: ${renderRichText(mistake.correctAnswer || "")}</p>
+      ${mistake.explanation ? `<p>${renderRichText(mistake.explanation)}</p>` : ""}
     </article>
   `;
 }
@@ -701,7 +701,88 @@ window.addEventListener("resize", () => {
   syncHostMetrics();
 }, { passive: true });
 
-// === HTML escape ===
+// === Rich-text rendering ===
+// Renders a limited safe subset of Markdown/HTML:
+//   **bold** / __bold__   → <strong>
+//   *italic* / _italic_   → <em>
+//   <u>underline</u>      → <u> (passed through)
+//   $latex$               → KaTeX inline math
+// Everything else is HTML-escaped for safety.
+
+// Sentinel characters for placeholder swaps (outside printable ASCII range)
+const MATH = "\x00";
+const HTML_TAG = "\x01";
+
+const ALLOWED_HTML = /<\/?u>/gi;
+
+function renderRichText(value) {
+  const raw = String(value ?? "");
+
+  // ── 1. Extract and protect inline math ($...$) ──
+  const mathPieces: string[] = [];
+  const withMathProtected = raw.replace(
+    /\$([^$]+)\$/g,
+    (_full: string, formula: string) => {
+      mathPieces.push(formula);
+      return `${MATH}${mathPieces.length - 1}${MATH}`;
+    }
+  );
+
+  // ── 2. Protect allowed HTML tags (<u>, </u>) ──
+  const htmlPieces: string[] = [];
+  const withHtmlProtected = withMathProtected.replace(
+    ALLOWED_HTML,
+    (match: string) => {
+      htmlPieces.push(match);
+      return `${HTML_TAG}${htmlPieces.length - 1}${HTML_TAG}`;
+    }
+  );
+
+  // ── 3. Escape everything else ──
+  let out = escapeHtml(withHtmlProtected);
+
+  // ── 4. Restore allowed HTML tags ──
+  out = out.replace(
+    new RegExp(`${HTML_TAG}(\\d+)${HTML_TAG}`, "g"),
+    (_: string, i: string) => htmlPieces[Number(i)]!
+  );
+
+  // ── 5. Markdown → HTML ──
+  // Order matters: ** before * so that **a** doesn't leave stray * markers.
+  out = out.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  out = out.replace(/__([^_]+)__/g, "<strong>$1</strong>");
+  out = out.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+  out = out.replace(/_([^_]+)_/g, "<em>$1</em>");
+
+  // ── 6. Render inline math with KaTeX ──
+  if (typeof katex !== "undefined" && mathPieces.length > 0) {
+    out = out.replace(
+      new RegExp(`${MATH}(\\d+)${MATH}`, "g"),
+      (_: string, i: string) => {
+        const formula = mathPieces[Number(i)]!;
+        try {
+          return katex.renderToString(formula, {
+            throwOnError: false,
+            strict: false,
+          });
+        } catch {
+          return `<code>${escapeHtml(formula)}</code>`;
+        }
+      }
+    );
+  } else {
+    // KaTeX not available — show raw formula
+    out = out.replace(
+      new RegExp(`${MATH}(\\d+)${MATH}`, "g"),
+      (_: string, i: string) =>
+        `<code>${escapeHtml(mathPieces[Number(i)]!)}</code>`
+    );
+  }
+
+  return out;
+}
+
+// === HTML escape (plain, no rich formatting) ===
 
 function escapeHtml(value) {
   return String(value ?? "")

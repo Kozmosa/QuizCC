@@ -69,6 +69,11 @@ Generate a quiz group in JSON format matching this schema:
 - **Explanations**: Explain WHY the answer is correct. This is crucial for learning.
 - **Difficulty**: Match the requested difficulty level. "hard" and "insane" should require deep knowledge.
 - **Avoid overlap**: Don't reuse the same stem or options across questions in the same group.
+- **Text formatting**: Use limited Markdown in stems, options, and explanations:
+  - `**bold**` for key terms or emphasis
+  - `*italic*` for definitions or foreign terms
+  - `<u>underline</u>` for critical points
+  - `$formula$` for **ALL mathematical notation** — always wrap math in single dollar signs (e.g., `$E = mc^2$`, `$O(n \log n)$`, `$\int_0^\infty f(x)dx$`). Never use raw Unicode math or double dollar signs. The web UI renders `$...$` as KaTeX.
 
 ## Phase 3: Start the Quiz
 

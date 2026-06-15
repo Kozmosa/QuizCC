@@ -385,6 +385,19 @@ button {
   line-height: 1.45;
 }
 
+/* === Rich-text: inherits from parent context (strong, em, u use browser defaults) === */
+
+/* KaTeX inline math — fine-tune sizing to match surrounding text */
+.quizcat__stem .katex {
+  font-size: 1.05em;
+}
+
+.quizcat__option-text .katex,
+.quizcat__feedback .katex,
+.quizcat__mistake .katex {
+  font-size: 1em;
+}
+
 .quizcat__empty {
   color: #6b7280;
 }
