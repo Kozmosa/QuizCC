@@ -1,0 +1,11 @@
+{
+  "name": "quizcc",
+  "version": "1.0.0",
+  "description": "Interactive terminal-based quizzes for Claude Code. Generate and take quizzes on any topic with single-choice and true/false questions, instant feedback, and score summaries.",
+  "author": {
+    "name": "QuizCC"
+  },
+  "keywords": ["quiz", "learning", "interactive", "education"],
+  "commands": "./commands",
+  "mcpServers": ".mcp.json"
+}
