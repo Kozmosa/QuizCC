@@ -22,6 +22,14 @@ import type { UserAnswer } from "../core/types.js";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const widgetDir = join(__dirname, "widget");
+const katexDistDir = join(
+  __dirname,
+  "..",
+  "..",
+  "node_modules",
+  "katex",
+  "dist"
+);
 
 const MIME_TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -30,6 +38,9 @@ const MIME_TYPES: Record<string, string> = {
   ".json": "application/json; charset=utf-8",
   ".png": "image/png",
   ".svg": "image/svg+xml",
+  ".woff2": "font/woff2",
+  ".woff": "font/woff",
+  ".ttf": "font/ttf",
 };
 
 // === Helpers ===
@@ -92,9 +103,31 @@ async function serveStatic(
   res: ServerResponse,
   urlPath: string
 ): Promise<boolean> {
-  // Map /widget/* to widget directory files
+  // Map /widget/* to widget directory files or vendor (KaTeX) files
   const relative = urlPath.replace(/^\/widget\//, "");
   if (!relative || relative.includes("..")) return false;
+
+  // /widget/vendor/katex/* → node_modules/katex/dist/*
+  if (relative.startsWith("vendor/katex/")) {
+    const katexFile = relative.replace("vendor/katex/", "");
+    const filePath = join(katexDistDir, katexFile);
+    const ext = "." + ((katexFile.split(".").pop()) ?? "");
+    const mime = MIME_TYPES[ext] || "application/octet-stream";
+
+    try {
+      const content = await readFile(filePath);
+      res.writeHead(200, {
+        "Content-Type": mime,
+        "Access-Control-Allow-Origin": "*",
+        // Aggressive cache for versioned assets
+        "Cache-Control": "public, max-age=604800, immutable",
+      });
+      res.end(content);
+      return true;
+    } catch {
+      return false;
+    }
+  }
 
   const filePath = join(widgetDir, relative);
   const ext = "." + (relative.split(".").pop() ?? "html");
