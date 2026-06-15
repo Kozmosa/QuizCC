@@ -1,0 +1,16 @@
+{
+  "name": "kozmos-quizcc",
+  "description": "Interactive terminal and web-based quizzes for Claude Code on any topic",
+  "owner": {
+    "name": "Kozmosa"
+  },
+  "plugins": [
+    {
+      "name": "quizcc",
+      "description": "Interactive terminal-based quizzes for Claude Code. Generate and take quizzes on any topic with single-choice and true/false questions, instant feedback, score summaries, and web UI support. Includes a stateful MCP server.",
+      "source": "./",
+      "category": "learning",
+      "homepage": "https://github.com/Kozmosa/QuizCC"
+    }
+  ]
+}
